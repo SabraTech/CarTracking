@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Car Tracking</string>
+    <string name="title_activity_maps">Car View</string>
+    <string name="control_label">Control Board</string>
+    <string name="car_not_moving">Get Car Location Static</string>
+    <string name="car_moving">Get Car Location</string>
+    <string name="auth">Authenticate</string>
+    <string name="config">Set New Configuration</string>
+</resources>
