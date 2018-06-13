@@ -63,12 +63,13 @@ public class ControlActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        try {
-            socket.close();
-        } catch (IOException e) {
-            Log.e(TAG, "Could not close the connect socket", e);
+        if(socket != null){
+            try {
+                socket.close();
+            } catch (IOException e) {
+                Log.e(TAG, "Could not close the connect socket", e);
+            }
         }
-
     }
 
     private boolean connectToKit() {
@@ -189,6 +190,7 @@ public class ControlActivity extends AppCompatActivity {
 
     public void viewCar(View view) {
         // view the maps activity
+        startActivity(new Intent(ControlActivity.this, MapsActivity.class));
     }
 
     public void authenticate(View view) {
