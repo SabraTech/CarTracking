@@ -31,6 +31,8 @@ public class ControlActivity extends AppCompatActivity {
     private static final String TAG = "ControlActivity";
     private static final String PHONE_NUMBER = "0020111";
     private static final String MESSAGE = "message";
+    private static final String KIT_NAME = "name";
+    private static final String KIT_MAC = "mac";
 
     private Button authButton;
     private OutputStream outputStream;
@@ -84,20 +86,21 @@ public class ControlActivity extends AppCompatActivity {
                         String deviceHardwareAddress = device.getAddress();
 
                         // check the wanted device if found then begin connect
-                        ParcelUuid[] uuids = device.getUuids();
-                        try {
-                            socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid());
-                            socket.connect();
-                            outputStream = socket.getOutputStream();
-                            inputStream = socket.getInputStream();
-                            return true;
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            return false;
+                        if(deviceName.equals(KIT_NAME) && deviceHardwareAddress.equals(KIT_MAC)){
+                            ParcelUuid[] uuids = device.getUuids();
+                            try {
+                                socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid());
+                                socket.connect();
+                                outputStream = socket.getOutputStream();
+                                inputStream = socket.getInputStream();
+                                return true;
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                                return false;
+                            }
                         }
-
-                        // else tell user to pair with the device first
                     }
+                    // else tell user to pair with the device first
                 } else {
                     Log.e(TAG, "no paired devices");
                     // no paired devices
@@ -141,6 +144,7 @@ public class ControlActivity extends AppCompatActivity {
         // send the sms
         sendSMSMessage();
         // view the maps activity
+        startActivity(new Intent(ControlActivity.this, MapsActivity.class));
     }
 
     protected void sendSMSMessage(){
