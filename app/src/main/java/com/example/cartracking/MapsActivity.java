@@ -1,18 +1,23 @@
 package com.example.cartracking;
 
-import android.support.v4.app.FragmentActivity;
+import android.os.Handler;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
+    private Marker now;
+    private static final int INTERVAL = 5000;
+    private Handler locationHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,26 +27,46 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        locationHandler = new Handler();
     }
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        scheduleUpdateLocation();
+    }
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        LatLng alexandria = new LatLng(31.205753, 29.924526);
-        mMap.addMarker(new MarkerOptions().position(alexandria).title("Marker in Alexandria"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(alexandria));
+    @Override
+    public void onBackPressed() {
+        locationHandler.removeCallbacksAndMessages(null);
+        super.onBackPressed();
+    }
+
+    private void scheduleUpdateLocation() {
+        locationHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                updateLocation();
+                locationHandler.postDelayed(this, INTERVAL);
+            }
+        }, INTERVAL);
+    }
+
+    private void updateLocation() {
+        // send request to server and get the location
+        double lat = 31.205753, lng = 29.924526;
+        updateMarker(lat, lng);
+    }
+
+    private void updateMarker(double lat, double lng) {
+        LatLng location = new LatLng(lat, lng);
+        if (now == null) {
+            now = mMap.addMarker(new MarkerOptions().position(location).title("My Car"));
+        } else {
+            now.setPosition(location);
+        }
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(location));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(16));
     }
 }
