@@ -29,21 +29,23 @@ public class ControlActivity extends AppCompatActivity {
     private static final int MY_PERMISSIONS_REQUEST_SEND_SMS = 0;
     private static final int REQUEST_ENABLE_BT = 1;
     private static final String TAG = "ControlActivity";
-    private static final String PHONE_NUMBER = "0020111";
-    private static final String MESSAGE = "message";
+
+    private static final String MESSAGE = "LOC";
     private static final String KIT_NAME = "name";
     private static final String KIT_MAC = "mac";
+
+    private String phoneNumber = "01068435908";
+    private String xorNum = "1111";
+    private String key = "5060";
+    private String ip = "0.0.0.0";
+    private int port = 999;
 
     private Button authButton;
     private OutputStream outputStream;
     private InputStream inputStream;
     private BluetoothSocket socket;
 
-    private String time;
-    private String key;
-    private String ip;
-    private String port;
-    private String url;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,7 +146,11 @@ public class ControlActivity extends AppCompatActivity {
         // send the sms
         sendSMSMessage();
         // view the maps activity
-        startActivity(new Intent(ControlActivity.this, MapsActivity.class));
+        Intent intent = new Intent(ControlActivity.this, MapsActivity.class);
+        intent.putExtra("ip", ip);
+        intent.putExtra("port", port);
+        intent.putExtra("static", true);
+        startActivity(intent);
     }
 
     protected void sendSMSMessage(){
@@ -164,7 +170,7 @@ public class ControlActivity extends AppCompatActivity {
             case MY_PERMISSIONS_REQUEST_SEND_SMS:{
                 if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                     SmsManager smsManager = SmsManager.getDefault();
-                    smsManager.sendTextMessage(PHONE_NUMBER, null, MESSAGE, null, null);
+                    smsManager.sendTextMessage(phoneNumber, null, MESSAGE, null, null);
                     Toast.makeText(getApplicationContext(), "SMS sent", Toast.LENGTH_LONG).show();
 
                     // or
@@ -194,19 +200,31 @@ public class ControlActivity extends AppCompatActivity {
 
     public void viewCar(View view) {
         // view the maps activity
-        startActivity(new Intent(ControlActivity.this, MapsActivity.class));
+        Intent intent = new Intent(ControlActivity.this, MapsActivity.class);
+        intent.putExtra("ip", ip);
+        intent.putExtra("port", port);
+        intent.putExtra("static", false);
+        startActivity(intent);
     }
 
     public void authenticate(View view) {
-        String value = "";
-        // get the time and key
-        // xor them
+        // xor the two values
+        String value = makeXor(xorNum.getBytes(), key.getBytes());
+
         // send the value via bluetooth
         if(write(value)){
             Toast.makeText(ControlActivity.this, "Message Sent", Toast.LENGTH_SHORT).show();
         }else{
             Toast.makeText(ControlActivity.this, "Error in sending message", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private String makeXor(byte[] time, byte[] key){
+        byte[] out = new byte[time.length];
+        for(int i = 0; i < time.length; i++){
+            out[i] = (byte) (time[i] ^ key[i % key.length]);
+        }
+        return new String(out);
     }
 
     public void setConfig(View view) {
