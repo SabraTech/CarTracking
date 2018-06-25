@@ -6,4 +6,12 @@
     <string name="car_moving">Get Car Location</string>
     <string name="auth">Authenticate</string>
     <string name="config">Set New Configuration</string>
+    <string name="settings">Settings</string>
+    <string name="submit">Submit</string>
+    <string name="ip">IP (Admin Access)</string>
+    <string name="port">Port (Admin Access)</string>
+    <string name="phone_number">Phone Number (Admin Access)</string>
+    <string name="key">Key</string>
+    <string name="xor_num">XOR Number</string>
+    <string name="time_interval">Server Update Time Interval</string>
 </resources>

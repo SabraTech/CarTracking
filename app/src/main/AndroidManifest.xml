@@ -45,6 +45,10 @@
         <activity android:name=".MapsActivity"
             android:parentActivityName=".ControlActivity"
             android:label="@string/title_activity_maps"/>
+
+        <activity android:name=".SettingsActivity"
+            android:parentActivityName=".ControlActivity"
+            android:label="@string/title_activity_maps"/>
     </application>
 
 </manifest>

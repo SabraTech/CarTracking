@@ -19,11 +19,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private static final String TAG = "MapsActivity";
     private GoogleMap mMap;
     private Marker now;
-    private static final int INTERVAL = 5000;
+    private int interval;
     private Handler locationHandler;
     private String serverIp;
     private int serverPort;
-    private boolean onTimeRead, isFirst;
+    private boolean oneTimeRead, isFirst;
     private TCPClient client;
 
     @Override
@@ -36,9 +36,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
 
         isFirst = true;
-        serverIp = getIntent().getStringExtra("ip");
-        serverPort = Integer.parseInt(getIntent().getStringExtra("port"));
-        onTimeRead = Boolean.parseBoolean(getIntent().getStringExtra("static"));
+        serverIp = getIntent().getStringExtra(StaticConfig.STR_EXTRA_IP);
+        serverPort = Integer.parseInt(getIntent().getStringExtra(StaticConfig.STR_EXTRA_PORT));
+        oneTimeRead = Boolean.parseBoolean(getIntent().getStringExtra(StaticConfig.STR_EXTRA_STATIC));
+        interval = Integer.parseInt(getIntent().getStringExtra(StaticConfig.STR_EXTRA_TIME));
 
         client = new TCPClient();
         client.Connect(serverIp, serverPort);
@@ -49,7 +50,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        if(onTimeRead){
+        if(oneTimeRead){
             updateLocation();
         }else{
             scheduleUpdateLocation();
@@ -68,9 +69,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void run() {
                 updateLocation();
-                locationHandler.postDelayed(this, INTERVAL);
+                locationHandler.postDelayed(this, interval);
             }
-        }, INTERVAL);
+        }, interval);
     }
 
     private void updateLocation() {
