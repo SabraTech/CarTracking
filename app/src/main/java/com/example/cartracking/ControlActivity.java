@@ -33,19 +33,16 @@ public class ControlActivity extends AppCompatActivity {
     private static final String TAG = "ControlActivity";
 
     private static final String MESSAGE = "LOC";
-    private static final String KIT_NAME = "Dr. Farid Sabra";
-    private static final String KIT_MAC = "50:01:D9:93:7E:C6";
+    private static final String KIT_NAME = "name";
+    private static final String KIT_MAC = "00:06:66:87:C7:A8";
 
     private String phoneNumber = "01068435908";
     private String xorNum = "1111";
     private String key = "5060";
-    private String ip = "0.0.0.0";
-    private int port = 999;
-    private int serverInterval = 5000;
+    private String ip = "156.218.50.52";
+    private String port = "999";
+    private String serverInterval = "5000";
 
-    private Button authButton;
-    private DataOutputStream outputStream;
-    private InputStream inputStream;
     private BluetoothSocket socket;
 
 
@@ -53,14 +50,11 @@ public class ControlActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_control);
-        authButton = findViewById(R.id.authButton);
-        authButton.setEnabled(false);
         socket = null;
         // pair here first and notify the user with the result
         // if connected enable the auth button
 
         if (connectToKit()) {
-            authButton.setEnabled(true);
             Toast.makeText(ControlActivity.this, "Connected via Bluetooth", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(ControlActivity.this, "Not Connected", Toast.LENGTH_SHORT).show();
@@ -91,17 +85,18 @@ public class ControlActivity extends AppCompatActivity {
                         String deviceHardwareAddress = device.getAddress();
 
                         // check the wanted device if found then begin connect
-                        if (deviceName.equals(KIT_NAME) && deviceHardwareAddress.equals(KIT_MAC)) {
+                        if (deviceHardwareAddress.equals(KIT_MAC)) {
                             ParcelUuid[] uuids = device.getUuids();
                             bluetoothAdapter.cancelDiscovery();
                             try {
-//                                Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
-//                                socket = (BluetoothSocket) m.invoke(device, 1);                                // socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid());
-                                socket = device.createRfcommSocketToServiceRecord(uuids[0].getUuid());
+                                Class<?> clazz = device.getClass();
+                                Class<?>[] paramTypes = new Class<?>[] {Integer.TYPE};
 
+                                Method m = clazz.getMethod("createRfcommSocket", paramTypes);
+                                Object[] params = new Object[] {Integer.valueOf(1)};
+
+                                socket = (BluetoothSocket) m.invoke(device, params);
                                 socket.connect();
-                                outputStream = new DataOutputStream(socket.getOutputStream());
-                                inputStream = socket.getInputStream();
                                 return true;
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -126,16 +121,6 @@ public class ControlActivity extends AppCompatActivity {
         return false;
     }
 
-    private boolean write(String s) {
-        try {
-            outputStream.write(s.getBytes());
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
     public void viewCarSMS(View view) {
         // send the sms
         sendSMSMessage();
@@ -152,14 +137,6 @@ public class ControlActivity extends AppCompatActivity {
         SmsManager smsManager = SmsManager.getDefault();
         smsManager.sendTextMessage(phoneNumber, null, MESSAGE, null, null);
         Toast.makeText(getApplicationContext(), "SMS sent", Toast.LENGTH_LONG).show();
-//        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, MY_PERMISSIONS_REQUEST_SEND_SMS);
-////        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED) {
-//            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.SEND_SMS)) {
-//
-//            } else {
-//                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.SEND_SMS}, MY_PERMISSIONS_REQUEST_SEND_SMS);
-//            }
-//        }
     }
 
     @Override
@@ -171,24 +148,6 @@ public class ControlActivity extends AppCompatActivity {
                     SmsManager smsManager = SmsManager.getDefault();
                     smsManager.sendTextMessage(phoneNumber, null, MESSAGE, null, null);
                     Toast.makeText(getApplicationContext(), "SMS sent", Toast.LENGTH_LONG).show();
-
-                    // or
-//                    Intent smsIntent = new Intent(Intent.ACTION_VIEW);
-//
-//                    smsIntent.setData(Uri.parse("smsto:"));
-//                    smsIntent.setType("vnd.android-dir/mms-sms");
-//                    smsIntent.putExtra("address"  , PHONE_NUMBER);
-//                    smsIntent.putExtra("sms_body"  , MESSAGE);
-//
-//                    try {
-//                        startActivity(smsIntent);
-//                        finish();
-//                        Log.i("Finished sending SMS...", "");
-//                    } catch (android.content.ActivityNotFoundException ex) {
-//                        Toast.makeText(MainActivity.this,
-//                                "SMS faild, please try again later.", Toast.LENGTH_SHORT).show();
-//                    }
-
                 } else {
                     Toast.makeText(getApplicationContext(),
                             "SMS faild, please try again", Toast.LENGTH_LONG).show();
@@ -211,12 +170,20 @@ public class ControlActivity extends AppCompatActivity {
         // xor the two values
         String value = makeXor(xorNum.getBytes(), key.getBytes());
 
-        // send the value via bluetooth
-        if (write(value)) {
-            Toast.makeText(ControlActivity.this, "Message Sent", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(ControlActivity.this, "Error in sending message", Toast.LENGTH_SHORT).show();
+        if(socket.isConnected()){
+            try {
+                socket.getOutputStream().write(value.getBytes());
+                socket.getOutputStream().flush();
+                Toast.makeText(ControlActivity.this, "Message Sent", Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+                Toast.makeText(ControlActivity.this, "Error in sending message", Toast.LENGTH_SHORT).show();
+            }
+        }else{
+            Toast.makeText(ControlActivity.this, "Bluetooth connection lost!", Toast.LENGTH_SHORT).show();
         }
+
+
     }
 
     private String makeXor(byte[] time, byte[] key) {
@@ -243,22 +210,83 @@ public class ControlActivity extends AppCompatActivity {
                     // user say no or error in the bluetooth itself
                     Log.e(TAG, "the user say no");
                 }
+                break;
             }
             case StaticConfig.REQUEST_CODE_SETTINGS: {
                 // get the data from the intent and set to the new values;
-                boolean admin = Boolean.parseBoolean(data.getStringExtra(StaticConfig.STR_EXTRA_ADMIN));
-                if(admin){
-                    ip = data.getStringExtra(StaticConfig.STR_EXTRA_IP);
-                    port = Integer.parseInt(data.getStringExtra(StaticConfig.STR_EXTRA_PORT));
-                    phoneNumber = data.getStringExtra(StaticConfig.STR_EXTRA_PHONE);
-                    key = data.getStringExtra(StaticConfig.STR_EXTRA_KEY);
-                    xorNum = data.getStringExtra(StaticConfig.STR_EXTRA_XOR);
-                    serverInterval = Integer.parseInt(data.getStringExtra(StaticConfig.STR_EXTRA_TIME));
-                } else {
-                    key = data.getStringExtra(StaticConfig.STR_EXTRA_KEY);
-                    xorNum = data.getStringExtra(StaticConfig.STR_EXTRA_XOR);
-                    serverInterval = Integer.parseInt(data.getStringExtra(StaticConfig.STR_EXTRA_TIME));
+                if(resultCode == RESULT_CANCELED){
+                    Log.d(TAG, "Back button pressed");
+                }else if(resultCode == RESULT_OK){
+                    String admin = data.getStringExtra(StaticConfig.STR_EXTRA_ADMIN);
+                    if(admin.equals("true")){
+                        String tmp;
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_IP);
+                        if(tmp.equals("")){
+                            ip = ip;
+                        }else{
+                            ip = tmp;
+                        }
+
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_PORT);
+                        if(tmp.equals("")){
+                            port = port;
+                        }else{
+                            port = tmp;
+                        }
+
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_PHONE);
+                        if(tmp.equals("")){
+                            phoneNumber = phoneNumber;
+                        }else{
+                            phoneNumber = tmp;
+                        }
+
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_KEY);
+                        if(tmp.equals("")){
+                            key = key;
+                        }else{
+                            key = tmp;
+                        }
+
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_XOR);
+                        if(tmp.equals("")){
+                            xorNum = xorNum;
+                        }else{
+                            xorNum = tmp;
+                        }
+
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_TIME);
+                        if(tmp.equals("")){
+                            serverInterval = serverInterval;
+                        }else{
+                            serverInterval = tmp;
+                        }
+                    } else {
+                        String tmp;
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_KEY);
+                        if (tmp.equals("")) {
+                            key = key;
+                        } else {
+                            key = tmp;
+                        }
+
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_XOR);
+                        if (tmp.equals("")) {
+                            xorNum = xorNum;
+                        } else {
+                            xorNum = tmp;
+                        }
+
+                        tmp = data.getStringExtra(StaticConfig.STR_EXTRA_TIME);
+                        if (tmp.equals("")) {
+                            serverInterval = serverInterval;
+                        } else {
+                            serverInterval = tmp;
+                        }
+                    }
                 }
+                break;
+
             }
         }
     }
